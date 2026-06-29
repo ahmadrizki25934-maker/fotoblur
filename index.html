@@ -3,22 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apple Vision Pro - Spatial Computing Experience</title>
+    <title>Apple Vision Pro - Fixed Spatial Overlay</title>
     <link rel="stylesheet" href="style.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
 
     <div class="spatial-container">
         <video id="video" autoplay playsinline></video>
-        <div class="overlay-blur"></div>
         <canvas id="three-canvas"></canvas>
-        <canvas id="canvas" style="display: none;"></canvas> </div>
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
 
     <div id="object-inspector" class="vision-ui hidden">
         <div class="ui-header">
@@ -38,13 +36,12 @@
     </div>
 
     <div id="spatial-hud" class="vision-ui">
-        <div class="hud-title">visionOS Core Active</div>
+        <div class="hud-title">visionOS Active Framework</div>
         <div class="gesture-indicator" id="current-gesture">Gesture: Detecting...</div>
         <div class="hud-instructions">
-            • ✋ Hold Open Palm: Spawn Object<br>
-            • 🤏 Pinch + Move: Grab & Drag Object<br>
-            • ✊ Hold Fist on Object: Delete/Dissolve<br>
-            • ✌️ Peace Sign: Toggle Focus Mode
+            • ✋ Tangan Terbuka (1 dtk): Spawn Objek<br>
+            • 🤏 Pinch & Seret: Ambil & Geser Objek Spasial<br>
+            • ✊ Kepalan Tangan di Objek (1 dtk): Hapus/Dissolve
         </div>
     </div>
 
