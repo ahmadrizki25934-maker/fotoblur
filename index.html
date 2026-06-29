@@ -1,124 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
-<meta charset="UTF-8">
-
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>Vision Pro Spatial Computing</title>
-
-<link rel="stylesheet" href="style.css">
-
-<!-- MediaPipe -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-
-<!-- Three.js -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.160/build/three.min.js"></script>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Vision Pro - Spatial Computing Experience</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
-
 <body>
 
-<div id="app">
+    <div class="spatial-container">
+        <video id="video" autoplay playsinline></video>
+        <div class="overlay-blur"></div>
+        <canvas id="three-canvas"></canvas>
+        <canvas id="canvas" style="display: none;"></canvas> </div>
 
-    <!-- Webcam -->
-
-    <video
-        id="video"
-        autoplay
-        playsinline>
-    </video>
-
-    <!-- MediaPipe Canvas -->
-
-    <canvas id="canvas"></canvas>
-
-    <!-- Three.js -->
-
-    <canvas id="threeCanvas"></canvas>
-
-    <!-- Spatial Pointer -->
-
-    <div id="pointer">
-
-        <div class="pointerGlow"></div>
-
-        <div class="pointerDot"></div>
-
-    </div>
-
-    <!-- Floating HUD -->
-
-    <div id="hud">
-
-        <div class="glass">
-
-            Spatial Computing
-
+    <div id="object-inspector" class="vision-ui hidden">
+        <div class="ui-header">
+            <h3>OBJECT INSPECTOR</h3>
+            <span id="inspect-status" class="badge">IDLE</span>
         </div>
-
+        <hr class="ui-divider">
+        <div class="ui-row"><span>ID:</span><span id="inspect-id">-</span></div>
+        <div class="ui-row"><span>Type:</span><span id="inspect-type">-</span></div>
+        <div class="ui-row"><span>Pos X:</span><span id="inspect-px">0.00</span></div>
+        <div class="ui-row"><span>Pos Y:</span><span id="inspect-py">0.00</span></div>
+        <div class="ui-row"><span>Pos Z:</span><span id="inspect-pz">0.00</span></div>
+        <div class="ui-row"><span>Rot X:</span><span id="inspect-rx">0.00</span></div>
+        <div class="ui-row"><span>Rot Y:</span><span id="inspect-ry">0.00</span></div>
+        <div class="ui-row"><span>Rot Z:</span><span id="inspect-rz">0.00</span></div>
+        <div class="ui-row"><span>Scale:</span><span id="inspect-scale">1.00</span></div>
     </div>
 
-    <!-- Inspector -->
-
-    <div id="inspector">
-
-        <div class="glass">
-
-            <h2>Object Inspector</h2>
-
-            <p>ID :
-                <span id="objID">-</span>
-            </p>
-
-            <p>X :
-                <span id="px">0</span>
-            </p>
-
-            <p>Y :
-                <span id="py">0</span>
-            </p>
-
-            <p>Z :
-                <span id="pz">0</span>
-            </p>
-
-            <p>Rot X :
-                <span id="rx">0</span>
-            </p>
-
-            <p>Rot Y :
-                <span id="ry">0</span>
-            </p>
-
-            <p>Rot Z :
-                <span id="rz">0</span>
-            </p>
-
-            <p>Scale :
-                <span id="scale">1</span>
-            </p>
-
-            <p>Status :
-                <span id="status">None</span>
-            </p>
-
+    <div id="spatial-hud" class="vision-ui">
+        <div class="hud-title">visionOS Core Active</div>
+        <div class="gesture-indicator" id="current-gesture">Gesture: Detecting...</div>
+        <div class="hud-instructions">
+            • ✋ Hold Open Palm: Spawn Object<br>
+            • 🤏 Pinch + Move: Grab & Drag Object<br>
+            • ✊ Hold Fist on Object: Delete/Dissolve<br>
+            • ✌️ Peace Sign: Toggle Focus Mode
         </div>
-
     </div>
 
-</div>
-
-<script src="script.js"></script>
-
+    <script src="script.js"></script>
 </body>
-
 </html>
