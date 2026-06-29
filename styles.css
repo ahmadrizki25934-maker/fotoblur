@@ -1,0 +1,406 @@
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    user-select:none;
+}
+
+html,
+body{
+
+    width:100%;
+    height:100%;
+    overflow:hidden;
+
+    background:#050505;
+
+    font-family:
+    Inter,
+    Segoe UI,
+    sans-serif;
+
+}
+
+#app{
+
+    position:relative;
+
+    width:100vw;
+    height:100vh;
+
+    overflow:hidden;
+
+}
+
+/* ===========================
+   VIDEO
+=========================== */
+
+video{
+
+    position:absolute;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+
+    transform:scaleX(-1);
+
+    filter:
+    brightness(.9)
+    contrast(1.05)
+    saturate(1.15);
+
+}
+
+/* ===========================
+   MEDIAPIPE
+=========================== */
+
+#canvas{
+
+    position:absolute;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    transform:scaleX(-1);
+
+    pointer-events:none;
+
+    z-index:2;
+
+}
+
+/* ===========================
+   THREE.JS
+=========================== */
+
+#threeCanvas{
+
+    position:absolute;
+
+    inset:0;
+
+    width:100%;
+    height:100%;
+
+    pointer-events:none;
+
+    z-index:3;
+
+}
+
+/* ===========================
+   POINTER
+=========================== */
+
+#pointer{
+
+    position:absolute;
+
+    width:28px;
+    height:28px;
+
+    transform:
+    translate(-50%,-50%);
+
+    pointer-events:none;
+
+    z-index:999;
+
+}
+
+.pointerGlow{
+
+    position:absolute;
+
+    inset:0;
+
+    border-radius:50%;
+
+    background:
+
+    radial-gradient(
+
+        rgba(0,255,255,.9),
+
+        rgba(0,255,255,.15),
+
+        transparent
+
+    );
+
+    filter:blur(8px);
+
+    animation:pointerPulse 1.5s infinite;
+
+}
+
+.pointerDot{
+
+    position:absolute;
+
+    left:50%;
+    top:50%;
+
+    width:10px;
+    height:10px;
+
+    transform:translate(-50%,-50%);
+
+    border-radius:50%;
+
+    background:white;
+
+    box-shadow:
+
+    0 0 8px cyan,
+    0 0 18px cyan,
+    0 0 40px cyan;
+
+}
+
+/* ===========================
+   GLASS PANEL
+=========================== */
+
+.glass{
+
+    backdrop-filter:blur(22px);
+
+    -webkit-backdrop-filter:blur(22px);
+
+    background:
+
+    rgba(255,255,255,.08);
+
+    border:
+
+    1px solid rgba(255,255,255,.12);
+
+    border-radius:22px;
+
+    box-shadow:
+
+    0 10px 40px rgba(0,0,0,.35),
+
+    inset 0 0 1px rgba(255,255,255,.4);
+
+    color:white;
+
+}
+
+/* ===========================
+   HUD
+=========================== */
+
+#hud{
+
+    position:absolute;
+
+    top:25px;
+    left:25px;
+
+    z-index:50;
+
+}
+
+#hud .glass{
+
+    padding:
+
+    18px 28px;
+
+    font-size:18px;
+
+    font-weight:600;
+
+    letter-spacing:1px;
+
+}
+
+/* ===========================
+   INSPECTOR
+=========================== */
+
+#inspector{
+
+    position:absolute;
+
+    top:25px;
+
+    right:25px;
+
+    width:280px;
+
+    z-index:60;
+
+}
+
+#inspector .glass{
+
+    padding:22px;
+
+}
+
+#inspector h2{
+
+    margin-bottom:15px;
+
+    font-size:20px;
+
+}
+
+#inspector p{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    margin:8px 0;
+
+    font-size:15px;
+
+    opacity:.9;
+
+}
+
+#inspector span{
+
+    color:
+
+    #77ffff;
+
+}
+
+/* ===========================
+   FLOATING EFFECT
+=========================== */
+
+.glass{
+
+    animation:
+
+    floating 4s ease-in-out infinite;
+
+}
+
+/* ===========================
+   ANIMATION
+=========================== */
+
+@keyframes floating{
+
+    0%{
+
+        transform:translateY(0px);
+
+    }
+
+    50%{
+
+        transform:translateY(-6px);
+
+    }
+
+    100%{
+
+        transform:translateY(0px);
+
+    }
+
+}
+
+@keyframes pointerPulse{
+
+    0%{
+
+        transform:scale(.9);
+
+        opacity:.5;
+
+    }
+
+    50%{
+
+        transform:scale(1.3);
+
+        opacity:1;
+
+    }
+
+    100%{
+
+        transform:scale(.9);
+
+        opacity:.5;
+
+    }
+
+}
+
+/* ===========================
+   HOVER EFFECT
+=========================== */
+
+.hovered{
+
+    filter:
+
+    drop-shadow(0 0 20px cyan);
+
+}
+
+/* ===========================
+   SELECTED
+=========================== */
+
+.selected{
+
+    filter:
+
+    drop-shadow(0 0 30px #00ffff);
+
+}
+
+/* ===========================
+   SPAWN EFFECT
+=========================== */
+
+.spawn{
+
+    animation:
+
+    spawnAnim .35s ease;
+
+}
+
+@keyframes spawnAnim{
+
+    from{
+
+        transform:
+
+        scale(.1);
+
+        opacity:0;
+
+    }
+
+    to{
+
+        transform:
+
+        scale(1);
+
+        opacity:1;
+
+    }
+
+}
