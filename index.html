@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apple Vision Pro - Fixed Spatial Overlay</title>
+    <title>Apple Vision Pro - Perfect Spatial Computing</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <div class="spatial-container">
+    <div class="camera-container">
         <video id="video" autoplay playsinline></video>
         <canvas id="three-canvas"></canvas>
         <canvas id="canvas" style="display: none;"></canvas>
@@ -36,12 +36,12 @@
     </div>
 
     <div id="spatial-hud" class="vision-ui">
-        <div class="hud-title">visionOS Active Framework</div>
+        <div class="hud-title">visionOS Core Engine</div>
         <div class="gesture-indicator" id="current-gesture">Gesture: Detecting...</div>
         <div class="hud-instructions">
-            • ✋ Tangan Terbuka (1 dtk): Spawn Objek<br>
-            • 🤏 Pinch & Seret: Ambil & Geser Objek Spasial<br>
-            • ✊ Kepalan Tangan di Objek (1 dtk): Hapus/Dissolve
+            • ✋ Tangan Terbuka (Tahan 1 dtk): Spawn Objek Baru<br>
+            • 🤏 Pinch Jari & Geser: Ambil & Manipulasi Posisi/Rotasi Objek<br>
+            • ✊ Kepalan Tangan di Atas Objek (Tahan 1 dtk): Delete/Dissolve Objek
         </div>
     </div>
 
