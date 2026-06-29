@@ -1,406 +1,165 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    user-select:none;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    user-select: none;
 }
 
-html,
-body{
-
-    width:100%;
-    height:100%;
-    overflow:hidden;
-
-    background:#050505;
-
-    font-family:
-    Inter,
-    Segoe UI,
-    sans-serif;
-
+body {
+    background: #050505;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-#app{
-
-    position:relative;
-
-    width:100vw;
-    height:100vh;
-
-    overflow:hidden;
-
+/* Spatial Container spanning across full screen viewport */
+.spatial-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* ===========================
-   VIDEO
-=========================== */
-
-video{
-
-    position:absolute;
-
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    object-fit:cover;
-
-    transform:scaleX(-1);
-
-    filter:
-    brightness(.9)
-    contrast(1.05)
-    saturate(1.15);
-
+video {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+    z-index: 1;
+    opacity: 0.35; /* Passthrough blend factor for spatial computing illusion */
 }
 
-/* ===========================
-   MEDIAPIPE
-=========================== */
-
-#canvas{
-
-    position:absolute;
-
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    transform:scaleX(-1);
-
-    pointer-events:none;
-
-    z-index:2;
-
+.overlay-blur {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    background: radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(5,5,10,0.8) 100%);
+    pointer-events: none;
 }
 
-/* ===========================
-   THREE.JS
-=========================== */
-
-#threeCanvas{
-
-    position:absolute;
-
-    inset:0;
-
-    width:100%;
-    height:100%;
-
-    pointer-events:none;
-
-    z-index:3;
-
+#three-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
 }
 
-/* ===========================
-   POINTER
-=========================== */
-
-#pointer{
-
-    position:absolute;
-
-    width:28px;
-    height:28px;
-
-    transform:
-    translate(-50%,-50%);
-
-    pointer-events:none;
-
-    z-index:999;
-
+/* VisionOS Premium Glassmorphism UI Framework */
+.vision-ui {
+    position: absolute;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(25px) saturate(190%);
+    -webkit-backdrop-filter: blur(25px) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.pointerGlow{
-
-    position:absolute;
-
-    inset:0;
-
-    border-radius:50%;
-
-    background:
-
-    radial-gradient(
-
-        rgba(0,255,255,.9),
-
-        rgba(0,255,255,.15),
-
-        transparent
-
-    );
-
-    filter:blur(8px);
-
-    animation:pointerPulse 1.5s infinite;
-
+.vision-ui:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), 
+                0 0 15px rgba(255, 255, 255, 0.05);
 }
 
-.pointerDot{
-
-    position:absolute;
-
-    left:50%;
-    top:50%;
-
-    width:10px;
-    height:10px;
-
-    transform:translate(-50%,-50%);
-
-    border-radius:50%;
-
-    background:white;
-
-    box-shadow:
-
-    0 0 8px cyan,
-    0 0 18px cyan,
-    0 0 40px cyan;
-
+#object-inspector {
+    top: 30px;
+    right: 30px;
+    width: 300px;
 }
 
-/* ===========================
-   GLASS PANEL
-=========================== */
-
-.glass{
-
-    backdrop-filter:blur(22px);
-
-    -webkit-backdrop-filter:blur(22px);
-
-    background:
-
-    rgba(255,255,255,.08);
-
-    border:
-
-    1px solid rgba(255,255,255,.12);
-
-    border-radius:22px;
-
-    box-shadow:
-
-    0 10px 40px rgba(0,0,0,.35),
-
-    inset 0 0 1px rgba(255,255,255,.4);
-
-    color:white;
-
+#object-inspector.hidden {
+    opacity: 0;
+    transform: translateX(50px) scale(0.95);
+    pointer-events: none;
 }
 
-/* ===========================
-   HUD
-=========================== */
-
-#hud{
-
-    position:absolute;
-
-    top:25px;
-    left:25px;
-
-    z-index:50;
-
+#spatial-hud {
+    bottom: 30px;
+    left: 30px;
+    width: 340px;
 }
 
-#hud .glass{
-
-    padding:
-
-    18px 28px;
-
-    font-size:18px;
-
-    font-weight:600;
-
-    letter-spacing:1px;
-
+.ui-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
 }
 
-/* ===========================
-   INSPECTOR
-=========================== */
-
-#inspector{
-
-    position:absolute;
-
-    top:25px;
-
-    right:25px;
-
-    width:280px;
-
-    z-index:60;
-
+.badge {
+    background: #007aff;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0,122,255,0.5);
 }
 
-#inspector .glass{
-
-    padding:22px;
-
+.badge.active {
+    background: #34c759;
+    box-shadow: 0 0 10px rgba(52,199,89,0.5);
 }
 
-#inspector h2{
-
-    margin-bottom:15px;
-
-    font-size:20px;
-
+.ui-divider {
+    border: none;
+    height: 1px;
+    background: rgba(255,255,255,0.15);
+    margin: 12px 0;
 }
 
-#inspector p{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    margin:8px 0;
-
-    font-size:15px;
-
-    opacity:.9;
-
+.ui-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.7);
 }
 
-#inspector span{
-
-    color:
-
-    #77ffff;
-
+.ui-row span:last-child {
+    color: #ffffff;
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 600;
 }
 
-/* ===========================
-   FLOATING EFFECT
-=========================== */
-
-.glass{
-
-    animation:
-
-    floating 4s ease-in-out infinite;
-
+.hud-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    background: linear-gradient(180deg, #fff 0%, #aaa 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
-/* ===========================
-   ANIMATION
-=========================== */
-
-@keyframes floating{
-
-    0%{
-
-        transform:translateY(0px);
-
-    }
-
-    50%{
-
-        transform:translateY(-6px);
-
-    }
-
-    100%{
-
-        transform:translateY(0px);
-
-    }
-
+.gesture-indicator {
+    font-size: 0.9rem;
+    color: #00ffff;
+    text-shadow: 0 0 8px rgba(0,255,255,0.4);
+    margin-bottom: 12px;
+    font-weight: 500;
 }
 
-@keyframes pointerPulse{
-
-    0%{
-
-        transform:scale(.9);
-
-        opacity:.5;
-
-    }
-
-    50%{
-
-        transform:scale(1.3);
-
-        opacity:1;
-
-    }
-
-    100%{
-
-        transform:scale(.9);
-
-        opacity:.5;
-
-    }
-
-}
-
-/* ===========================
-   HOVER EFFECT
-=========================== */
-
-.hovered{
-
-    filter:
-
-    drop-shadow(0 0 20px cyan);
-
-}
-
-/* ===========================
-   SELECTED
-=========================== */
-
-.selected{
-
-    filter:
-
-    drop-shadow(0 0 30px #00ffff);
-
-}
-
-/* ===========================
-   SPAWN EFFECT
-=========================== */
-
-.spawn{
-
-    animation:
-
-    spawnAnim .35s ease;
-
-}
-
-@keyframes spawnAnim{
-
-    from{
-
-        transform:
-
-        scale(.1);
-
-        opacity:0;
-
-    }
-
-    to{
-
-        transform:
-
-        scale(1);
-
-        opacity:1;
-
-    }
-
+.hud-instructions {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.6);
 }
