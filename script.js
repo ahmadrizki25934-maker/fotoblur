@@ -1,27 +1,26 @@
 // ============================================================================
-// REAL-TIME PERFECT ALIGNMENT & DUAL-STAGE SMOOTHING SPATIAL ENGINE
+// APPLE VISION PRO - CORE SPATIAL COMPUTING ENGINE (PERFECT ALIGNMENT)
 // ============================================================================
 
 const video = document.getElementById("video");
 const canvas3d = document.getElementById("three-canvas");
 
-// --- 1. THREE.JS KANVAS & KAMERA PROYEKSI ---
+// --- 1. SET UP RUANG 3D & PROYEKSI KAMERA ---
 const scene = new THREE.Scene();
-const camera3d = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 1000); // Kunci rasio ke 16:9
+const camera3d = new THREE.PerspectiveCamera(60, 16 / 9, 0.1, 1000); // Rasio dikunci ke 16:9
 const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, alpha: true, antialias: true });
 
-// Set ukuran awal berdasarkan dimensi pembungkusnya
 renderer.setSize(canvas3d.clientWidth, canvas3d.clientHeight, false);
-camera3d.position.set(0, 0, 5); // Dekatkan kamera agar akurasi depth meningkat
+camera3d.position.set(0, 0, 5); // Jarak kamera optimal untuk melacak kedalaman tangan
 
-// Pencahayaan Virtual Lingkungan Spasial
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+// Tata Cahaya Spasial
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
 scene.add(ambientLight);
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(5, 5, 5);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+dirLight.position.set(5, 8, 5);
 scene.add(dirLight);
 
-// --- 2. CONFIGURATIONS & ADVANCED FILTERS ---
+// --- 2. STATE & SMOOTHING BUFFER VARIABLE ---
 const MAX_OBJECTS = 20;
 let spatialObjects = [];
 let selectedObject = null;
@@ -30,54 +29,37 @@ let hoveredObject = null;
 let pinchState = 'RELEASED';
 let spawnTimer = 0;
 let deleteTimer = 0;
-let focusModeActive = false;
 
-// Filter Data Koordinat (Makin kecil nilainya, makin hilangnya getaran/jitter)
-const emaFilters = {};
-const EMA_ALPHA = 0.12; 
+// Array 21 Titik untuk Menampung Koordinat Tangan yang Sudah Dihaluskan (Bebas Jitter)
+let smoothedLandmarks = Array.from({ length: 21 }, () => new THREE.Vector3());
 
-// Pointer Spasial Bercahaya (Feature 1)
-const pointerGeometry = new THREE.SphereGeometry(0.1, 32, 32);
-const pointerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.8 });
+// Pointer Utama Ujung Jari Telunjuk (Feature 1)
+const pointerGeometry = new THREE.SphereGeometry(0.09, 32, 32);
+const pointerMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.85 });
 const spatialPointer = new THREE.Mesh(pointerGeometry, pointerMaterial);
-spatialPointer.add(new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff })));
+spatialPointer.add(new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffffff })));
 scene.add(spatialPointer);
 
 const handVisualizerGroup = new THREE.Group();
 scene.add(handVisualizerGroup);
 
-// --- 3. MATHEMATICAL ALIGNMENT MATRIX (KALIBRASI 1:1) ---
-function applyEMA(id, currentValue) {
-    if (!emaFilters[id]) emaFilters[id] = currentValue;
-    emaFilters[id] = (EMA_ALPHA * currentValue) + ((1 - EMA_ALPHA) * emaFilters[id]);
-    return emaFilters[id];
-}
-
-function calculateDistance(p1, p2) {
-    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2) + Math.pow(p1.z - p2.z, 2));
-}
-
-// Fungsi utama mengubah koordinat 2D MediaPipe menjadi Koordinat Real World 3D secara presisi
-function mapToSpatialSpace(landmark, depthTarget = 0) {
-    // Tahap 1: Haluskan koordinat mentah dari sensor kamera
-    const sx = applyEMA('lm_x_' + landmark.index, landmark.x);
-    const sy = applyEMA('lm_y_' + landmark.index, landmark.y);
-    const sz = applyEMA('lm_z_' + landmark.index, landmark.z);
-
-    // Hitung dimensi dinding frustum kamera secara dinamis pada kedalaman tertentu
-    const distance = camera3d.position.z - depthTarget;
+// --- 3. METODE KALIBRASI POSISI 1:1 (MATRIKS JAVASCRIPT) ---
+function mapToSpatialSpace(landmark) {
+    // Hitung ukuran lebar & tinggi dinding kamera 3D secara dinamis di koordinat Z = 0
+    const distance = camera3d.position.z;
     const visibleHeight = 2 * Math.tan((camera3d.fov * Math.PI) / 360) * distance;
     const visibleWidth = visibleHeight * camera3d.aspect;
 
-    // Mapping linier sempurna. Karena CSS dicerminkan bersamaan, sumbu X berjalan normal (kiri ke kanan)
-    const targetX = (sx - 0.5) * visibleWidth;
-    const targetY = -(sy - 0.5) * visibleHeight; // Balik sumbu Y karena Three.js menganggap atas adalah positif
-    const targetZ = depthTarget - (sz * 3.5); // Multiplier kedalaman maju mundur tangan
+    // KUNCI UTAMA: Membalik sumbu X di sini (-(landmark.x - 0.5)) karena video dicerminkan lewat CSS.
+    // Ini membuat koordinat 3D Three.js sinkron sempurna dengan tangan asli Anda di kamera.
+    const targetX = -(landmark.x - 0.5) * visibleWidth;
+    const targetY = -(landmark.y - 0.5) * visibleHeight;
+    const targetZ = -(landmark.z * 4.0); // Amplifikasi pergerakan kedalaman maju-mundur
 
     return new THREE.Vector3(targetX, targetY, targetZ);
 }
 
-// --- 4. GESTURE ENGINE STATE MACHINE ---
+// --- 4. ENGINE DETEKSI GESTURE ---
 function evaluateGestures(landmarks) {
     const thumbTip = landmarks[4];
     const indexTip = landmarks[8];
@@ -86,32 +68,32 @@ function evaluateGestures(landmarks) {
     const ringTip = landmarks[16];
     const pinkyTip = landmarks[20];
 
-    const pinchDist = calculateDistance(thumbTip, indexTip);
+    // Jarak jepitan jempol dan telunjuk
+    const pinchDist = thumbTip.distanceTo(indexTip);
     
     const isIndexExtended = indexTip.y < indexKnuckle.y;
     const isMiddleExtended = middleTip.y < landmarks[9].y;
     const isRingExtended = ringTip.y < landmarks[13].y;
     const isPinkyExtended = pinkyTip.y < landmarks[17].y;
 
-    // Deteksi Pinch
-    if (pinchDist < 0.045) {
+    if (pinchDist < 0.25) { // Threshold disesuaikan dengan skala ruang 3D yang baru
         pinchState = (pinchState === 'RELEASED') ? 'PRESSED' : 'HOLDING';
     } else {
         pinchState = 'RELEASED';
     }
 
-    if (!isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) return { name: "Fist", basic: "CLOSED" };
+    if (!isIndexExtended && !isMiddleExtended && !isRingExtended && !isPinkyExtended) return { name: "Fist (Kepalan)", basic: "CLOSED" };
     if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended) return { name: "Peace Sign", basic: "PEACE" };
-    if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended) return { name: "Open Palm", basic: "OPEN" };
+    if (isIndexExtended && isMiddleExtended && isRingExtended && isPinkyExtended) return { name: "Open Palm (Tangan Terbuka)", basic: "OPEN" };
     if (pinchState === 'HOLDING' || pinchState === 'PRESSED') return { name: "Pinch / Grab", basic: "PINCH" };
 
-    return { name: "Tracking", basic: "UNKNOWN" };
+    return { name: "Mencari Tangan...", basic: "UNKNOWN" };
 }
 
-// --- 5. INTERAKSI DAN MANIPULASI OBJEK ---
+// --- 5. INTERAKSI SPASIAL & PENDARAN HOVER ---
 function handleObjectHover(pointerPos) {
     let closestObj = null;
-    let minDistance = 0.6; // Jarak sensitivitas hover pointer ke objek
+    let minDistance = 0.5;
 
     spatialObjects.forEach(obj => {
         const dist = pointerPos.distanceTo(obj.mesh.position);
@@ -125,8 +107,7 @@ function handleObjectHover(pointerPos) {
         if (hoveredObject !== closestObj) {
             clearHoverState();
             hoveredObject = closestObj;
-            // Berikan efek pendaran (glow) saat ter-hover mouse/pointer tangan
-            hoveredObject.mesh.material.emissive.setHex(0x002233);
+            hoveredObject.mesh.material.emissive.setHex(0x002233); // Efek Glow saat disentuh pointer
         }
     } else {
         clearHoverState();
@@ -147,13 +128,13 @@ function createSpatialObject(position) {
     const type = types[Math.floor(Math.random() * types.length)];
     let geom;
 
-    if (type === 'cube') geom = new THREE.BoxGeometry(0.7, 0.7, 0.7);
-    else if (type === 'sphere') geom = new THREE.SphereGeometry(0.4, 32, 32);
-    else geom = new THREE.BoxGeometry(1.2, 0.8, 0.04); // Glassmorphic Window visionOS
+    if (type === 'cube') geom = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+    else if (type === 'sphere') geom = new THREE.SphereGeometry(0.35, 32, 32);
+    else geom = new THREE.BoxGeometry(1.0, 0.6, 0.03); // Panel visionOS Window
 
     const mat = new THREE.MeshStandardMaterial({
         color: Math.random() * 0xffffff,
-        roughness: 0.1,
+        roughness: 0.15,
         metalness: 0.1,
         transparent: true,
         opacity: 0.85
@@ -172,12 +153,12 @@ function createSpatialObject(position) {
 }
 
 function dissolveObject(obj) {
-    const duration = 400;
+    const duration = 300;
     const start = Date.now();
     function anim() {
         const progress = (Date.now() - start) / duration;
         if (progress < 1) {
-            obj.mesh.scale.multiplyScalar(0.9);
+            obj.mesh.scale.multiplyScalar(0.85);
             obj.mesh.material.opacity = 1 - progress;
             requestAnimationFrame(anim);
         } else {
@@ -190,99 +171,105 @@ function dissolveObject(obj) {
     anim();
 }
 
-// --- 6. VISUALISASI RANGKA TANGAN MODERN (Feature 14) ---
-function drawPremiumSkeleton(landmarks) {
+// --- 6. RENDERING TULANG TANGAN PREMIUM (Feature 14) ---
+function drawPremiumSkeleton() {
     handVisualizerGroup.clear();
     const jointMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-    const boneMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+    const boneMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.25 });
 
-    const points = landmarks.map((lm, idx) => {
-        lm.index = idx;
-        const vec = mapToSpatialSpace(lm, 0);
-        const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), jointMat);
-        sphere.position.copy(vec);
+    // Render bola pendar di setiap sendi
+    smoothedLandmarks.forEach(pos => {
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), jointMat);
+        sphere.position.copy(pos);
         handVisualizerGroup.add(sphere);
-        return vec;
     });
 
+    // Hubungkan garis antar sendi tangan
     HAND_CONNECTIONS.forEach(conn => {
-        const geom = new THREE.BufferGeometry().setFromPoints([points[conn[0]], points[conn[1]]]);
+        const geom = new THREE.BufferGeometry().setFromPoints([smoothedLandmarks[conn[0]], smoothedLandmarks[conn[1]]]);
         handVisualizerGroup.add(new THREE.Line(geom, boneMat));
     });
 }
 
-// --- 7. CORE REALTIME PROCESSING PIPELINE ---
+// --- 7. UTAMA: PROCESSING LOOP PIPELINE ---
 function onResults(results) {
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
         spatialPointer.visible = false;
         handVisualizerGroup.clear();
         clearHoverState();
-        document.getElementById("current-gesture").innerText = "Gesture: Detecting...";
+        document.getElementById("current-gesture").innerText = "Mencari Tangan...";
         return;
     }
 
     spatialPointer.visible = true;
-    const primaryHand = results.multiHandLandmarks[0];
+    const primaryHandRaw = results.multiHandLandmarks[0];
     
-    // Tahap 2 Interpolasi: Buat kursor mengikuti ujung telunjuk dengan transisi lerp yang halus
-    const targetPointerPos = mapToSpatialSpace({ ...primaryHand[8], index: 8 }, 0);
-    spatialPointer.position.lerp(targetPointerPos, 0.25); 
+    // TAHAP FILTER UTAMA: Ambil koordinat mentah, lalu lakukan LERP ke array smoothedLandmarks.
+    // Koefisien 0.35 memberikan keseimbangan sempurna: Getaran hilang total, tapi respons instan tanpa lag!
+    for (let i = 0; i < 21; i++) {
+        const targetPos = mapToSpatialSpace(primaryHandRaw[i]);
+        smoothedLandmarks[i].lerp(targetPos, 0.35);
+    }
 
-    drawPremiumSkeleton(primaryHand);
-    const gesture = evaluateGestures(primaryHand);
+    // Tempatkan kursor di koordinat ujung jari telunjuk yang sudah halus (index 8)
+    spatialPointer.position.copy(smoothedLandmarks[8]);
+
+    // Gambar kerangka tangan digital yang mewah
+    drawPremiumSkeleton();
+
+    // Evaluasi gesture berdasarkan sendi yang sudah dihaluskan
+    const gesture = evaluateGestures(smoothedLandmarks);
     document.getElementById("current-gesture").innerText = `Gesture: ${gesture.name}`;
 
     handleObjectHover(spatialPointer.position);
 
-    // ACTION TRIGGER MANAGER
+    // LOGIK MANIPULASI OBJEK BERDASARKAN GESTURE
     if (gesture.basic === "OPEN") {
         spawnTimer += 16.67;
-        if (spawnTimer >= 1000) {
-            createSpatialObject(spatialPointer.position.clone().add(new THREE.Vector3(0, 0, -0.5)));
+        if (spawnTimer >= 1000) { // Tahan 1 detik untuk memunculkan objek baru
+            createSpatialObject(spatialPointer.position.clone().add(new THREE.Vector3(0, 0, -0.4)));
             spawnTimer = 0;
         }
     } else { spawnTimer = 0; }
 
-    if (pinchState === 'PRESSED' && hoveredObject) selectedObject = hoveredObject;
+    if (pinchState === 'PRESSED' && hoveredObject) {
+        selectedObject = hoveredObject;
+    }
 
     if (pinchState === 'HOLDING' && selectedObject) {
         const lastPos = selectedObject.mesh.position.clone();
-        // Gerakan objek mengikuti tangan dihaluskan dengan koefisien lerp 0.15 (sangat halus)
-        selectedObject.mesh.position.lerp(spatialPointer.position, 0.15);
         
-        // Simpan sisa kalkulasi perpindahan untuk efek momentum fisika meluncur
+        // Objek ditarik mengikuti kursor dengan lerp halus 0.2
+        selectedObject.mesh.position.lerp(spatialPointer.position, 0.2);
+        
+        // Hitung sisa energi gerakan untuk efek lemparan fisika meluncur (momentum)
         selectedObject.velocity.subVectors(selectedObject.mesh.position, lastPos);
 
-        // Rotasi interaktif mengikuti orientasi pergelangan tangan
-        const wrist = mapToSpatialSpace({ ...primaryHand[0], index: 0 });
-        const knuckle = mapToSpatialSpace({ ...primaryHand[9], index: 9 });
+        // Hitung orientasi rotasi objek berdasarkan arah telapak tangan (pergelangan ke jari tengah)
+        const wrist = smoothedLandmarks[0];
+        const knuckle = smoothedLandmarks[9];
         const dir = new THREE.Vector3().subVectors(knuckle, wrist).normalize();
-        selectedObject.mesh.rotation.x = dir.y * 1.5;
-        selectedObject.mesh.rotation.y = dir.x * 1.5;
+        selectedObject.mesh.rotation.x = dir.y * 1.8;
+        selectedObject.mesh.rotation.y = dir.x * 1.8;
     }
 
     if (pinchState === 'RELEASED') selectedObject = null;
 
-    // Deteksi Kontrol Dua Tangan (Scaling Objek)
+    // Penskalaan Objek Dua Tangan (Feature 9)
     if (results.multiHandLandmarks.length >= 2 && gesture.basic === "OPEN" && selectedObject) {
-        const secondaryHand = results.multiHandLandmarks[1];
-        const secPointer = mapToSpatialSpace({ ...secondaryHand[8], index: 28 }, 0);
-        const dist = spatialPointer.position.distanceTo(secPointer);
-        selectedObject.mesh.scale.setScalar(Math.max(0.3, Math.min(2.5, dist * 0.5)));
+        const secondaryHandRaw = results.multiHandLandmarks[1];
+        const secPointerTarget = mapToSpatialSpace(secondaryHandRaw[8]);
+        const dist = spatialPointer.position.distanceTo(secPointerTarget);
+        selectedObject.mesh.scale.setScalar(Math.max(0.4, Math.min(2.5, dist * 0.6)));
     }
 
     if (gesture.basic === "CLOSED" && hoveredObject) {
         deleteTimer += 16.67;
-        if (deleteTimer >= 1000) {
+        if (deleteTimer >= 1000) { // Kepalkan tangan di atas objek selama 1 detik untuk menghapus
             dissolveObject(hoveredObject);
             deleteTimer = 0;
         }
     } else { deleteTimer = 0; }
-
-    if (gesture.basic === "PEACE") {
-        focusModeActive = !focusModeActive;
-        dirLight.color.setHex(focusModeActive ? 0xff00bb : 0xffffff);
-    }
 
     updateInspector();
 }
@@ -304,22 +291,27 @@ function updateInspector() {
     document.getElementById("inspect-scale").innerText = selectedObject.mesh.scale.x.toFixed(2);
 }
 
-// --- 8. PHYSICS SIMULATOR & TICK ANIMATION ---
+// --- 8. TICK ANIMATION & MOMENTUM PHYSICS (Feature 13) ---
 function animate() {
     requestAnimationFrame(animate);
+    
     spatialObjects.forEach(obj => {
         if (obj !== selectedObject) {
+            // Jalankan peluncuran momentum fisika saat objek dilepas dari genggaman tangan
             obj.mesh.position.add(obj.velocity);
-            obj.velocity.multiplyScalar(0.90); // Mengurangi momentum secara halus (Friction)
+            obj.velocity.multiplyScalar(0.92); // Perlambatan gesekan udara secara halus
+            
+            // Efek putaran lambat konstan saat melayang bebas
             obj.mesh.rotation.x += 0.003;
             obj.mesh.rotation.y += 0.002;
         }
     });
+    
     renderer.render(scene, camera3d);
 }
 animate();
 
-// --- 9. PLATFORM INITIALIZATION HOOKS ---
+// --- 9. MENYALAKAN HARDWARE & ENGINE ---
 async function startCamera() {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
     video.srcObject = stream;
@@ -336,7 +328,7 @@ const camera = new Camera(video, {
 });
 camera.start();
 
-// Listener dinamis mengikuti resolusi kontainer pengunci
+// Handle perubahan ukuran layar browser secara dinamis tanpa merusak rasio 16:9
 window.addEventListener('resize', () => {
     const w = canvas3d.clientWidth;
     const h = canvas3d.clientHeight;
